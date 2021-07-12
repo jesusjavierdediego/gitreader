@@ -1,27 +1,30 @@
 package askgit
 
 import (
-	"os"
+	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
-	"bytes"
-	"fmt"
+	"os"
+
 	//"html/template"
-	"regexp"
-	"strings"
-	"os/exec"
-	"strconv"
 	"encoding/json"
-	"time"
 	"math/rand"
+	"os/exec"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+	configuration "xqledger/gitreader/configuration"
+	utils "xqledger/gitreader/utils"
+
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"gopkg.in/src-d/go-git.v4"
-	utils "xqledger/gitreader/utils"
-	configuration "xqledger/gitreader/configuration"
 )
 
 var config = configuration.GlobalConfiguration
+
 const queryTemplate = `"askgit \"$query\" --repo \"$repopath\" --format json > $exportfilename.json"`
 const componentMessage = "Git Query Agent"
 
@@ -34,15 +37,15 @@ var (
 )
 
 func getRandomInt() int {
-    rand.Seed(time.Now().UnixNano())
-    return rand.Intn(100000)
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(100000)
 }
 
 /*
 PUBLIC
 Get the list of commits of a file with details as a list of commits with all fields
 */
-func GetRecordHistory(file_path, reponame string) ([]Commit, error){
+func GetRecordHistory(file_path, reponame string) ([]Commit, error) {
 	commitList, err := getListOfCommitsForAFile(file_path, reponame)
 	var results []Commit
 	if err != nil {
@@ -54,11 +57,11 @@ func GetRecordHistory(file_path, reponame string) ([]Commit, error){
 		var exportfilename = fmt.Sprintf("%s_commit_by_id_%d", reponame, getRandomInt())
 		commits, err := getCommits(sqlQuery, reponame, exportfilename)
 		file := exportfilename + ".json"
-		if err != nil{
+		if err != nil {
 			removeFile(file)
 			return results, err
 		}
-		if !(len(commits)>0){
+		if !(len(commits) > 0) {
 			removeFile(file)
 			return results, errors.New(fmt.Sprintf("The commit with ID '%s' cannot be retrieved", commitId))
 		}
@@ -69,17 +72,17 @@ func GetRecordHistory(file_path, reponame string) ([]Commit, error){
 
 }
 
-func removeFile(exportfilename string){
+func removeFile(exportfilename string) {
 	removeErr := os.Remove(exportfilename)
 	if removeErr != nil {
-		utils.PrintLogWarn(removeErr, componentMessage, "Removing File", "File could not be deleted: " + exportfilename)
+		utils.PrintLogWarn(removeErr, componentMessage, "Removing File", "File could not be deleted: "+exportfilename)
 	}
 }
 
 /*
 Get the list of commit IDs of a file as a list of commit ids
 */
-func getListOfCommitsForAFile(file_path, reponame string) ([]string, error){
+func getListOfCommitsForAFile(file_path, reponame string) ([]string, error) {
 	var emptyResult []string
 	sqlQuery := fmt.Sprintf(Query_commitlist_by_file, file_path)
 	var exportfilename = fmt.Sprintf("%s_commitlist_by_file_%d", reponame, getRandomInt())
@@ -89,7 +92,7 @@ func getListOfCommitsForAFile(file_path, reponame string) ([]string, error){
 		removeFile(file)
 		return emptyResult, err
 	}
-	if !(len(listOfCommits)>0){
+	if !(len(listOfCommits) > 0) {
 		removeFile(file)
 		return emptyResult, errors.New("No commit was found")
 	}
@@ -97,14 +100,13 @@ func getListOfCommitsForAFile(file_path, reponame string) ([]string, error){
 	return listOfCommits, nil
 }
 
-
 /*
 PUBLIC
 Get the diff between two commits
 Show the diff to html
 Export to html
 */
-func GetDiffTwoCommitsInFile(commit_id_1, commit_id_2, file_path, reponame string) (string, error){
+func GetDiffTwoCommitsInFile(commit_id_1, commit_id_2, file_path, reponame string) (string, error) {
 	var result string
 	var methodMsg = "GetDiffTwoCommits"
 	var prettyJSON1 bytes.Buffer
@@ -112,25 +114,25 @@ func GetDiffTwoCommitsInFile(commit_id_1, commit_id_2, file_path, reponame strin
 
 	olderRecord, err1 := GetContentInCommit(commit_id_1, file_path, reponame)
 	if err1 != nil {
-        utils.PrintLogError(err1, componentMessage, methodMsg, fmt.Sprintf("Error getting content of commit %s", commit_id_1))
-        return result, err1
-    }
+		utils.PrintLogError(err1, componentMessage, methodMsg, fmt.Sprintf("Error getting content of commit %s", commit_id_1))
+		return result, err1
+	}
 	newerRecord, err2 := GetContentInCommit(commit_id_2, file_path, reponame)
 	if err2 != nil {
-        utils.PrintLogError(err2, componentMessage, methodMsg, fmt.Sprintf("Error getting content of commit %s", commit_id_2))
-        return result, err2
-    }
+		utils.PrintLogError(err2, componentMessage, methodMsg, fmt.Sprintf("Error getting content of commit %s", commit_id_2))
+		return result, err2
+	}
 
-    error1 := json.Indent(&prettyJSON1, []byte(olderRecord), "", "\t")
-    if error1 != nil {
-        utils.PrintLogError(error1, componentMessage, methodMsg, "Error in JSON indentation of older record")
-        return result, error1
-    }
+	error1 := json.Indent(&prettyJSON1, []byte(olderRecord), "", "\t")
+	if error1 != nil {
+		utils.PrintLogError(error1, componentMessage, methodMsg, "Error in JSON indentation of older record")
+		return result, error1
+	}
 	error2 := json.Indent(&prettyJSON2, []byte(newerRecord), "", "\t")
 	if error2 != nil {
 		utils.PrintLogError(error2, componentMessage, methodMsg, "Error in JSON indentation of newer record")
-        return result, error2
-    }
+		return result, error2
+	}
 
 	pt1 := string(prettyJSON1.Bytes())
 	pt2 := string(prettyJSON2.Bytes())
@@ -145,8 +147,7 @@ func GetDiffTwoCommitsInFile(commit_id_1, commit_id_2, file_path, reponame strin
 	return string(serializedTemplate), nil
 }
 
-
-func GetContentInCommit(commit_id, file_path, reponame string) (string, error){
+func GetContentInCommit(commit_id, file_path, reponame string) (string, error) {
 	var emptyResult string
 	var exportfilename = fmt.Sprintf("%s_contentincommit_by_file_%d", reponame, getRandomInt())
 	sqlQuery := fmt.Sprintf(Query_contents_from_commit_in_file, commit_id, file_path)
@@ -164,9 +165,9 @@ func GetContentInCommit(commit_id, file_path, reponame string) (string, error){
 	return content, nil
 }
 
-func runGitQuery(sqlquery, repopath, exportfilename string) error{
+func runGitQuery(sqlquery, repopath, exportfilename string) error {
 	methodMsg := "runGitQuery"
-	unquoteQuery := func(s string) string{
+	unquoteQuery := func(s string) string {
 		t, err := strconv.Unquote(s)
 		if err != nil {
 			fmt.Printf("Unquote(%#v): %v\n", s, err)
@@ -174,21 +175,21 @@ func runGitQuery(sqlquery, repopath, exportfilename string) error{
 			fmt.Printf("Unquote(%#v) = %v\n", s, t)
 		}
 		return t
-	}	
+	}
 	askGitCommand := getQueryText(sqlquery, repopath, exportfilename)
 	unquotedQuery := unquoteQuery(askGitCommand)
-	utils.PrintLogInfo(componentMessage, methodMsg, "We're gona start running the ask git command:  " + unquotedQuery)
+	utils.PrintLogInfo(componentMessage, methodMsg, "We're gona start running the ask git command:  "+unquotedQuery)
 	out, err := exec.Command("/bin/sh", "-c", unquotedQuery).Output()
-    if err != nil {
+	if err != nil {
 		utils.PrintLogError(err, componentMessage, methodMsg, "Error executing ask git command!!")
 		return err
-    }
-    output := string(out[:])
-	utils.PrintLogInfo(componentMessage, methodMsg, "Command Successfully Executed! - Output: " + output)
+	}
+	output := string(out[:])
+	utils.PrintLogInfo(componentMessage, methodMsg, "Command Successfully Executed! - Output: "+output)
 	return nil
 }
 
-func getQueryText(query, repopath, exportfilename string) string{
+func getQueryText(query, repopath, exportfilename string) string {
 	var result = ""
 	result = strings.ReplaceAll(queryTemplate, "$query", query)
 	result = strings.ReplaceAll(result, "$repopath", repopath)
@@ -200,11 +201,11 @@ func getQueryText(query, repopath, exportfilename string) string{
 func getLocalRepoPath(reponame string) (string, error) {
 	var repoPath = ""
 	repoPath = os.Getenv("LOCALGITBASICPATH")
-	if !(len(repoPath)>0) {
+	if !(len(repoPath) > 0) {
 		repoPath = config.Gitserver.Localreposlocation + reponame
 	}
-	if !(len(repoPath) > 0) || !(len(reponame) > 0){
-		return "", errors.New(fmt.Sprintf("The path for the local git repo cannot be composed - event.Unit: %s - Root path in config: %s" + reponame, repoPath))
+	if !(len(repoPath) > 0) || !(len(reponame) > 0) {
+		return "", errors.New(fmt.Sprintf("The path for the local git repo cannot be composed - event.Unit: %s - Root path in config: %s"+reponame, repoPath))
 	}
 	return repoPath, nil
 }
@@ -223,10 +224,10 @@ func synchronizeGitRepo(reponame string) (string, error) {
 	if openErr != nil {
 		utils.PrintLogInfo(componentMessage, methodMsg, "We cannot open the local Git repository: "+repoPath)
 		/*
-		Error opening the local repo -> Try to clone the remote repo
+			Error opening the local repo -> Try to clone the remote repo
 		*/
-		utils.PrintLogInfo(componentMessage, methodMsg, "remoteRepoURL: " + remoteRepoURL)
-		utils.PrintLogInfo(componentMessage, methodMsg, "We are going to clone the remote repo if it exists - URL: " + remoteRepoURL)
+		utils.PrintLogInfo(componentMessage, methodMsg, "remoteRepoURL: "+remoteRepoURL)
+		utils.PrintLogInfo(componentMessage, methodMsg, "We are going to clone the remote repo if it exists - URL: "+remoteRepoURL)
 		cloneErr := Clone(remoteRepoURL, repoPath)
 		if cloneErr != nil {
 			return "", cloneErr
@@ -256,7 +257,7 @@ type CommitContent struct {
 	Contents string `json:"contents"`
 }
 
-func commitIdListToStringArray(commits []CommitId) []string{
+func commitIdListToStringArray(commits []CommitId) []string {
 	var result []string
 	for _, commit := range commits {
 		result = append(result, commit.Commit_id)
@@ -264,7 +265,7 @@ func commitIdListToStringArray(commits []CommitId) []string{
 	return result
 }
 
-func runQueryContentInCommit(sqlquery, reponame, exportfilename string) (string, error){
+func runQueryContentInCommit(sqlquery, reponame, exportfilename string) (string, error) {
 	var result string
 	repoPath, syncErr := synchronizeGitRepo(reponame)
 	if syncErr != nil {
@@ -286,7 +287,7 @@ func runQueryContentInCommit(sqlquery, reponame, exportfilename string) (string,
 		if decodeErr == io.EOF {
 			// all done
 			break
-		} 
+		}
 		if decodeErr != nil {
 			return result, decodeErr
 		}
@@ -296,8 +297,7 @@ func runQueryContentInCommit(sqlquery, reponame, exportfilename string) (string,
 	return content, nil
 }
 
-
-func getListOfCommits(sqlquery, reponame, exportfilename string) ([]string, error){
+func getListOfCommits(sqlquery, reponame, exportfilename string) ([]string, error) {
 	var result []string
 	repoPath, syncErr := synchronizeGitRepo(reponame)
 	if syncErr != nil {
@@ -319,7 +319,7 @@ func getListOfCommits(sqlquery, reponame, exportfilename string) ([]string, erro
 		if decodeErr == io.EOF {
 			// all done
 			break
-		} 
+		}
 		if decodeErr != nil {
 			return result, decodeErr
 		}
@@ -388,23 +388,21 @@ func diffToHTML(diffs []diffmatchpatch.Diff) []byte {
 	return buf.Bytes()
 }
 
-
 type Commit struct {
-	Id   string `json:"id"`
-	Message string `json:"message"`
-	Summary string `json:"summary"`
-	Author_name string `json:"author_name"`
-	Author_email string `json:"author_email"`
-	Author_when string `json:"author_when"`
-	Committer_name string `json:"committer_name"`
+	Id              string `json:"id"`
+	Message         string `json:"message"`
+	Summary         string `json:"summary"`
+	Author_name     string `json:"author_name"`
+	Author_email    string `json:"author_email"`
+	Author_when     string `json:"author_when"`
+	Committer_name  string `json:"committer_name"`
 	Committer_email string `json:"committer_email"`
-	Committer_when string `json:"committer_when"`
-	Parent_id string `json:"parent_id"`
-	Parent_count int `json:"parent_count"`
+	Committer_when  string `json:"committer_when"`
+	Parent_id       string `json:"parent_id"`
+	Parent_count    int    `json:"parent_count"`
 }
 
-
-func getCommits(sqlquery, reponame, exportfilename string) ([]Commit, error){
+func getCommits(sqlquery, reponame, exportfilename string) ([]Commit, error) {
 	var data []Commit
 	repoPath, syncErr := synchronizeGitRepo(reponame)
 	if syncErr != nil {
@@ -425,7 +423,7 @@ func getCommits(sqlquery, reponame, exportfilename string) ([]Commit, error){
 		if decodeErr == io.EOF {
 			// all done
 			break
-		} 
+		}
 		if decodeErr != nil {
 			return data, decodeErr
 		}

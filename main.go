@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+
 	//"time"
 	configuration "xqledger/gitreader/configuration"
 	grpcserver "xqledger/gitreader/grpc"
 	pb "xqledger/gitreader/protobuf"
+
 	//scheduled "xqledger/gitreader/scheduled"
 	utils "xqledger/gitreader/utils"
 
@@ -41,15 +43,15 @@ func main() {
 	if listenerErr != nil {
 		utils.PrintLogError(listenerErr, componentMessage, "Starting", "Error")
 	}
-	utils.PrintLogInfo(componentMessage, "Starting", "Starting Git Reasder gRPC services on port "+strconv.Itoa(grpcPort))
+	utils.PrintLogInfo(componentMessage, "Starting", "Starting Git Reader gRPC services on port "+strconv.Itoa(grpcPort))
 	service := pb.RecordHistoryServiceServer(&grpcserver.RecordHistoryService{})
 	server := grpc.NewServer()
 	pb.RegisterRecordHistoryServiceServer(server, service)
 
 	/*
-	service := pb.DigitalIdentityServiceServer(&grpcserver.DigitalIdentityService{})
-	server := grpc.NewServer()
-	pb.RegisterDigitalIdentityServiceServer(server, service)
+		service := pb.DigitalIdentityServiceServer(&grpcserver.DigitalIdentityService{})
+		server := grpc.NewServer()
+		pb.RegisterDigitalIdentityServiceServer(server, service)
 	*/
 
 	if err := server.Serve(listener); err != nil {

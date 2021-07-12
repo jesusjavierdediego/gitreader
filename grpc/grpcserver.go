@@ -4,16 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	askgit "xqledger/gitreader/askgit"
 	configuration "xqledger/gitreader/configuration"
 	pb "xqledger/gitreader/protobuf"
 	utils "xqledger/gitreader/utils"
-	askgit "xqledger/gitreader/askgit"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 const componentMessage = "GRPC Server"
+
 var config = configuration.GlobalConfiguration
 
 type RecordHistoryService struct {
@@ -23,8 +25,6 @@ type RecordHistoryService struct {
 func NewRecordHistoryService(query *pb.Query) *RecordHistoryService {
 	return &RecordHistoryService{query: query}
 }
-
-
 
 /*
   ok: OK
@@ -76,7 +76,7 @@ func validateRecordHistoryQuery(query *pb.Query) error {
 
 func commitTpPBCommit(commit askgit.Commit) *pb.Commit {
 	var c pb.Commit
-	c.Id= commit.Id
+	c.Id = commit.Id
 	c.Message = commit.Message
 	c.AuthorEmail = commit.Author_email
 	c.AuthorName = commit.Author_name
@@ -104,7 +104,7 @@ func (s *RecordHistoryService) GetRecordHistory(ctx context.Context, query *pb.Q
 		finalErr = getErrorResponseMessage(err)
 		utils.PrintLogError(err, componentMessage, methodMsg, finalErr.Error())
 		return &result, finalErr
-	} 
+	}
 	var list []*pb.Commit
 	for _, commit := range commits {
 		pbc := commitTpPBCommit(commit)
@@ -129,7 +129,7 @@ func (s *RecordHistoryService) GetContentInCommit(ctx context.Context, query *pb
 		finalErr = getErrorResponseMessage(err)
 		utils.PrintLogError(err, componentMessage, methodMsg, finalErr.Error())
 		return &result, finalErr
-	} 
+	}
 	result.Content = content
 	return &result, nil
 }
@@ -148,7 +148,7 @@ func (s *RecordHistoryService) GetDiffTwoCommitsInFile(ctx context.Context, quer
 		finalErr = getErrorResponseMessage(err)
 		utils.PrintLogError(err, componentMessage, methodMsg, finalErr.Error())
 		return &result, finalErr
-	} 
+	}
 	result.Html = htmlDiff
 	return &result, nil
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 	config "xqledger/gitreader/configuration"
 )
+
 var configuration = config.GlobalConfiguration
 
 func Contains(s []string, e string) bool {
@@ -35,7 +36,6 @@ func GetFormattedNow() string {
 		t.Hour(), t.Minute(), t.Second())
 	return formatted
 }
-
 
 func AddTimeToNowEpoch(years int, months int, days int) int64 {
 	t := time.Now()
