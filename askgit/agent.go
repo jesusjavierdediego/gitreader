@@ -238,13 +238,13 @@ func synchronizeGitRepo(reponame string) (string, error) {
 		}
 	} else {
 		utils.PrintLogInfo(componentMessage, methodMsg, fmt.Sprintf("Local repo '%s' exist. We are gonna pull the last commit", reponame))
-		_, err := r.Worktree()
+		w, err := r.Worktree()
 		if err != nil {
 			utils.PrintLogError(err, componentMessage, methodMsg, "Error getting Worktree in local Git repository: "+repoPath)
 			return "", err
 		}
 		utils.PrintLogInfo(componentMessage, methodMsg, "git pull origin")
-		//w.Pull(&git.PullOptions{RemoteName: "origin"})
+		w.Pull(&git.PullOptions{RemoteName: "origin"})
 	}
 	return repoPath, nil
 }

@@ -25,4 +25,4 @@ gitserver:
   username: TestOrchestrator
   password: TestOrchestrator
   email: TestOrchestrator@xqledger.com
-  localreposlocation: "/Users/administrator/workspace/projects/go/src/xqledger/xp-lab/diff/"
+  localreposlocation: "/var/git/repos/"
