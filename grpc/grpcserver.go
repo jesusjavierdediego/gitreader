@@ -76,7 +76,7 @@ func validateRecordHistoryQuery(query *pb.Query) error {
 
 func commitTpPBCommit(commit askgit.Commit) *pb.Commit {
 	var c pb.Commit
-	c.Id = commit.Id
+	c.Hash = commit.Hash
 	c.Message = commit.Message
 	c.AuthorEmail = commit.Author_email
 	c.AuthorName = commit.Author_name
@@ -84,9 +84,7 @@ func commitTpPBCommit(commit askgit.Commit) *pb.Commit {
 	c.CommitterEmail = commit.Committer_email
 	c.CommitterName = commit.Committer_name
 	c.CommitterWhen = commit.Committer_when
-	c.ParentCount = int32(commit.Parent_count)
-	c.ParentId = commit.Parent_id
-	c.Summary = commit.Summary
+	c.Parents = int32(commit.Parents)
 	return &c
 }
 

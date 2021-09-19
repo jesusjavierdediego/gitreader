@@ -250,7 +250,7 @@ func synchronizeGitRepo(reponame string) (string, error) {
 }
 
 type CommitId struct {
-	Commit_id string `json:"commit_id"`
+	Commit_id string `json:"commit_hash"`
 }
 
 type CommitContent struct {
@@ -389,7 +389,7 @@ func diffToHTML(diffs []diffmatchpatch.Diff) []byte {
 }
 
 type Commit struct {
-	Id              string `json:"id"`
+	Hash              string `json:"hash"`
 	Message         string `json:"message"`
 	Summary         string `json:"summary"`
 	Author_name     string `json:"author_name"`
@@ -398,8 +398,7 @@ type Commit struct {
 	Committer_name  string `json:"committer_name"`
 	Committer_email string `json:"committer_email"`
 	Committer_when  string `json:"committer_when"`
-	Parent_id       string `json:"parent_id"`
-	Parent_count    int    `json:"parent_count"`
+	Parents       int `json:"parents"`
 }
 
 func getCommits(sqlquery, reponame, exportfilename string) ([]Commit, error) {
