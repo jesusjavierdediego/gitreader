@@ -1,5 +1,6 @@
 package askgit
 
+// https://github.com/askgitdev/askgit
 
 // Include the name/path of the file in commits.message field when the commit is done.
 
