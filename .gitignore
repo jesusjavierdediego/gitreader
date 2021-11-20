@@ -11,6 +11,7 @@
 gitreader
 integration-tests/gitea
 integration-tests/mysql
+testreports/*.xml
 
 # Test binary, build with `go test -c`
 *.test
