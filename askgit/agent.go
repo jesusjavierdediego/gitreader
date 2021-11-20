@@ -18,7 +18,6 @@ import (
 	"time"
 	configuration "xqledger/gitreader/configuration"
 	utils "xqledger/gitreader/utils"
-
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"gopkg.in/src-d/go-git.v4"
 )

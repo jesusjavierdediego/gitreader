@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+	<testsuite tests="1" failures="0" time="0.000" name="xqledger/gitreader/grpc">
+		<properties>
+			<property name="go.version" value="go1.17.2"></property>
+		</properties>
+		<testcase classname="grpc" name="TestRecordHistoryService" time="0.580"></testcase>
+	</testsuite>
+</testsuites>

@@ -4,7 +4,7 @@ RUN apk update
 RUN apk add --no-cache \
     alpine-sdk \
     pkgconf \
-    libgit2-dev \
+    # libgit2-dev \
     libssh2-dev \
     musl-dev \
     cmake \
@@ -14,7 +14,13 @@ RUN apk add --no-cache \
     bash \
     http-parser-dev \
     git \
-    sqlite-dev
+    sqlite-dev 
+RUN wget https://github.com/libgit2/libgit2/archive/v1.3.0.tar.gz && \
+    tar xzf v1.3.0.tar.gz && \
+    cd libgit2-1.3.0/ && \
+    cmake -DBUILD_CLAR=OFF . && \
+    make && \
+    make install 
 RUN CGO_CFLAGS=-DUSE_LIBSQLITE3 CGO_LDFLAGS=-Wl,--unresolved-symbols=ignore-in-object-files go install -tags="sqlite_vtable,vtable,sqlite_json1,static,system_libgit2" github.com/askgitdev/askgit@latest
 WORKDIR $GOPATH/src/xqledger/gitreader
 COPY . ./

@@ -9,6 +9,8 @@
 .scannerwork/
 
 gitreader
+integration-tests/gitea
+integration-tests/mysql
 
 # Test binary, build with `go test -c`
 *.test

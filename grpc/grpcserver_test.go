@@ -1,94 +1,79 @@
 package grpc
 
-// import (
-// 	"testing"
-// 	"time"
-// 	mock "xqledger/gitreader/grpc/grpcmock"
-// 	pb "xqledger/gitreader/protobuf"
-// 	utils "xqledger/gitreader/utils"
+import (
+	"testing"
+	"time"
+	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"strconv"
+	"log"
+	pb "xqledger/gitreader/protobuf"
+)
 
-// 	gomock "github.com/golang/mock/gomock"
-// 	. "github.com/smartystreets/goconvey/convey"
-// 	"golang.org/x/net/context"
-// )
+const filename = "100.json"
+const reponame = "GitOperatorTestRepo"
+const oldcommit = "009ad0734ea8727e6a1064663a8b901ad5f47272"
+const newcommit = "6836a89827c310a3ae7e431fedba9ca62252e5be"
 
-// var req = utils.GetIDR4Test()
-// var res = utils.GetIDRes4Test()
-// var errorRes pb.Empty
+func getRecordHistoryServiceConn() (*grpc.ClientConn, error) {
+	var address = "localhost:" + strconv.Itoa(config.GrpcServer.Port)
+	var conn *grpc.ClientConn
+	var connErr error
+	conn, connErr = grpc.Dial(address, grpc.WithInsecure())
+	if connErr != nil {
+		log.Fatalf("did not connect: %v", connErr)
+		return nil, connErr
+	}
+	return conn, nil
+}
 
-// func TestGRPCDigitalIdentityService(t *testing.T) {
-// 	ctrl := gomock.NewController(t)
-// 	defer ctrl.Finish()
-// 	mockClient := mock.NewMockDigitalIdentityServiceClient(ctrl)
+func TestRecordHistoryService(t *testing.T) {
+	conn, _ := getRecordHistoryServiceConn()
+	defer conn.Close()
+	c := pb.NewRecordHistoryServiceClient(conn)
+	var commit = ""
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
-// 	mockClient.EXPECT().RegisterNewDID(
-// 		gomock.Any(),
-// 		req,
-// 	).Return(&errorRes, nil)
+	Convey("Should GetRecordHistory", t, func() {
+		conn, _ := getRecordHistoryServiceConn()
+		defer conn.Close()
+		c := pb.NewRecordHistoryServiceClient(conn)
 
-// 	mockClient.EXPECT().GetDID(
-// 		gomock.Any(),
-// 		req,
-// 	).Return(res, nil)
+		query := &pb.Query{
+			CommitIdOld: "",
+			CommitIdNew: "",
+			FilePath: filename,
+			RepoName: reponame,
+		}
+		result, err := c.GetRecordHistory(ctx, query)
+		if len(result.Commits) > 0 {
+			commit = result.Commits[0].Hash
+		}
+		So(err, ShouldBeNil)
+		So(len(result.Commits), ShouldBeGreaterThan, 0)
+	})
 
-// 	mockClient.EXPECT().PartialRevokeDID(
-// 		gomock.Any(),
-// 		req,
-// 	).Return(&errorRes, nil)
+	Convey("Should GetContentInCommit", t, func() {
+		query := &pb.Query{
+			CommitIdOld: commit,
+			CommitIdNew: "",
+			FilePath: filename,
+			RepoName: reponame,
+		}
+		_, err := c.GetContentInCommit(ctx, query)
+		So(err, ShouldBeNil)
+	})
 
-// 	mockClient.EXPECT().CompleteRevokeDID(
-// 		gomock.Any(),
-// 		req,
-// 	).Return(&errorRes, nil)
-
-// 	testRegisterNewDID(t, mockClient)
-// 	testGetDID(t, mockClient)
-// 	testPartialRevokeDID(t, mockClient)
-// 	testCompleteRevokeDID(t, mockClient)
-// }
-
-// func testRegisterNewDID(t *testing.T, client pb.DigitalIdentityServiceClient) {
-// 	Convey("Should register a new DID through gRPC", t, func() {
-// 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-// 		defer cancel()
-// 		_, err := client.RegisterNewDID(ctx, req)
-// 		So(err, ShouldBeNil)
-// 	})
-// }
-
-// func testGetDID(t *testing.T, client pb.DigitalIdentityServiceClient) {
-// 	Convey("Should retrieve a DID through gRPC", t, func() {
-// 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-// 		defer cancel()
-// 		r0, r1 := client.GetDID(ctx, req)
-// 		if r0.UserId.Piiid != "973e0e91-1120-4acd-8135-aad21be70d26" {
-// 			t.Errorf("mocking failed")
-// 		}
-// 		So(r1, ShouldBeNil)
-// 		So(r0.UserId.Piiid, ShouldEqual, req.UserId.Piiid)
-// 	})
-// }
-
-// func testPartialRevokeDID(t *testing.T, client pb.DigitalIdentityServiceClient) {
-// 	Convey("Should revoke an DID through gRPC", t, func() {
-// 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-// 		defer cancel()
-// 		_, err := client.PartialRevokeDID(ctx, req)
-// 		if err != nil {
-// 			t.Errorf("mocking failed")
-// 		}
-// 		So(err, ShouldBeNil)
-// 	})
-// }
-
-// func testCompleteRevokeDID(t *testing.T, client pb.DigitalIdentityServiceClient) {
-// 	Convey("Should revoke an DID through gRPC", t, func() {
-// 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-// 		defer cancel()
-// 		_, err := client.CompleteRevokeDID(ctx, req)
-// 		if err != nil {
-// 			t.Errorf("mocking failed")
-// 		}
-// 		So(err, ShouldBeNil)
-// 	})
-// }
+	Convey("Should GetDiffTwoCommitsInFile", t, func() {
+		query := &pb.Query{
+			CommitIdOld: commit,
+			CommitIdNew: commit,
+			FilePath: filename,
+			RepoName: reponame,
+		}
+		_, err := c.GetDiffTwoCommitsInFile(ctx, query)
+		So(err, ShouldBeNil)
+	})
+}

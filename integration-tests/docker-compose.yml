@@ -1,0 +1,68 @@
+version: "3.8"
+
+networks:
+  exp-ledger:
+    external: false
+
+services:
+  git-server:
+    container_name: gitserver
+    image: gitea/gitea:latest
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - DB_TYPE=mysql
+      - DB_HOST=git-db:3306
+      - DB_NAME=gitea
+      - DB_USER=gitea
+      - DB_PASSWD=gitea
+    restart: always
+    networks:
+      - exp-ledger
+    volumes:
+      - ./gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3000:3000"
+      - "222:22"
+    depends_on:
+      - git-db
+  
+  git-db:
+    container_name: git-db
+    image: mysql:5.7
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=gitea
+      - MYSQL_USER=gitea
+      - MYSQL_PASSWORD=gitea
+      - MYSQL_DATABASE=gitea
+    networks:
+      - exp-ledger
+    volumes:
+      - ./mysql:/var/lib/mysql
+
+  git-reader:
+    image: gitreader:latest
+    container_name: gitreader
+    build:
+      context: ../../gitreader
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - GITSERVER_URL=http://git-server:3000
+      - GITSERVER_LOCALREPOSLOCATION=/var/git/repos/
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /var/tmp:/var/git/repositories:ro
+    networks:
+      - exp-ledger   
+    ports:
+      - "50051:50051"  
+    depends_on:    
+      - git-server
+
+
+  
