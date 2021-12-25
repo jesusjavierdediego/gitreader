@@ -24,7 +24,7 @@ import (
 
 var config = configuration.GlobalConfiguration
 
-const queryTemplate = `"askgit \"$query\" --repo \"$repopath\" --format json > $exportfilename.json"`
+const queryTemplate = `"mergestat \"$query\" --repo \"$repopath\" --format json > $exportfilename.json"`
 const componentMessage = "Git Query Agent"
 
 var trailingSpanRegex = regexp.MustCompile(`<span\s*[[:alpha:]="]*?[>]?$`)
